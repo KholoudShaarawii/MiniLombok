@@ -124,11 +124,5 @@ It also demonstrates:
 This project demonstrates a deeper level of Java understanding by focusing on compile-time code generation rather than standard application development.
 
 It shows how Java source code can be inspected and modified inside the compiler using annotation processing and AST manipulation, which are core ideas behind advanced developer tools and libraries such as Lombok.
-
 As a result, the project reflects practical experience with compiler internals, code generation, and framework-level development concepts.
-
-## Author
-
-Developed as an educational project to explore Java annotation processing, compiler internals, and AST-based code generation through a mini Lombok-style implementation
-
-Created as a learning project to explore Java compiler internals and build a mini Lombok-style processor.
+mpiler internals and build a mini Lombok-style processor.
