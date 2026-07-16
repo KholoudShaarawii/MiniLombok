@@ -1,4 +1,4 @@
-package com.kho.Lombok;
+package com.kho.Lombok.processor;
 
 import com.sun.source.util.Trees;
 import com.sun.tools.javac.code.Flags;
@@ -24,7 +24,7 @@ import java.util.Set;
 })
 @SupportedSourceVersion(SourceVersion.RELEASE_11)
 
-public class processor extends AbstractProcessor {
+public class LombokProcessor extends AbstractProcessor {
     private Trees trees;
     private TreeMaker treeMaker;
     private Names names;

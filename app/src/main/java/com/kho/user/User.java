@@ -1,4 +1,4 @@
-package com.kho;
+package com.kho.user;
 
 import com.kho.annotations.Accessor;
 import com.kho.annotations.Mutator;
