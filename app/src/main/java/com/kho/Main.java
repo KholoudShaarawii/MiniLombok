@@ -6,5 +6,6 @@ public class Main {
 user.setName ("kholouud");
 System.out.println(user.getName ());
 
+
     }
 }

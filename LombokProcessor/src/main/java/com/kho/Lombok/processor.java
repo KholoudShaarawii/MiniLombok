@@ -19,7 +19,7 @@ import javax.tools.Diagnostic;
 import java.util.Set;
 
 @SupportedAnnotationTypes({
-        "com.kho.annotations.Accessor" ,
+        "com.kho.annotations.Accessor",
         "com.kho.annotations.Mutator"
 })
 @SupportedSourceVersion(SourceVersion.RELEASE_11)
@@ -36,58 +36,55 @@ public class processor extends AbstractProcessor {
        Unwrapping the ProcessingEnvironment to obtain the Context and access compiler internals.*/
         //==> each mvn clean install = new compilation Session ,,each session has  .java , new parsing ,new  AST , .class , annotationProcessors ((rebuild everything from scratch))
         //Context ==> access to tools (Names,TreeMaker,Trees)
-        JavacProcessingEnvironment javacEnv=(JavacProcessingEnvironment) processingEnv;
-        Context context= javacEnv.getContext();
-        this.trees =Trees.instance(processingEnv);
-        this.treeMaker=TreeMaker.instance(context);
-        this.names =Names.instance(context);
-        processingEnv.getMessager().printMessage(Diagnostic.Kind.NOTE ,"The Javac tools are ready to use");
+        JavacProcessingEnvironment javacEnv = (JavacProcessingEnvironment) processingEnv;
+        Context context = javacEnv.getContext();
+        this.trees = Trees.instance(processingEnv);
+        this.treeMaker = TreeMaker.instance(context);
+        this.names = Names.instance(context);
+        processingEnv.getMessager().printMessage(Diagnostic.Kind.NOTE, "The Javac tools are ready to use");
     }
 
     @Override
-    public  boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv){
+    public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
+        //// LEVEL1 = Annotation Discovery Layer = JAVAX API ////
         //Level 1 --> to access the user class and retrieve elements annotated with specific annotations (read-only)
 
-               /////////////// LEVEL1 = Annotation Discovery Layer = JAVAX API //////////////
-
-        for (TypeElement annotation:annotations) {//annotations
+        for (TypeElement annotation : annotations) {
 
             for (Element element : roundEnv.getElementsAnnotatedWith(annotation)) {
 
-                if(element.getKind() != ElementKind.CLASS){ continue; }
-
-                //element -? class ,method ,interface and field
-                //TypeElement --> class or interface or enum ....
+                if (element.getKind() != ElementKind.CLASS) {
+                    continue;
+                }
                 TypeElement classElement = (TypeElement) element;
 
-                /////////////// LEVEL2  = JAVAC INTERNALS AST API = Beginning of the AST //////////////
-          //Level 2 -->
-        //from TypeElement to JCClassDecl (JAVAX -> COMPILER AST)
-         //JCtree = JCVariableDecl , JCMethodDecl,...
-                JCTree tree=(JCTree) trees.getTree(classElement);  //ast nodes
+                ////LEVEL2  = JAVAC INTERNALS AST API = Beginning of the AST ////
+                //Level 2 --> from TypeElement to JCClassDecl (JAVAX -> COMPILER AST)
 
-               // if(!(tree instanceof JCTree.JCClassDecl)){ continue; }
+                JCTree tree = (JCTree) trees.getTree(classElement);  //ast nodes
 
-                JCTree.JCClassDecl classDecl= (JCTree.JCClassDecl) tree;
-             //defs-> class members
+                // if(!(tree instanceof JCTree.JCClassDecl)){ continue; }
 
+                JCTree.JCClassDecl classDecl = (JCTree.JCClassDecl) tree;
 
-                for ( JCTree def : classDecl.defs) {
-                    if (!(def instanceof JCTree.JCVariableDecl)) { continue; }
+                for (JCTree def : classDecl.defs) {
+                    if (!(def instanceof JCTree.JCVariableDecl)) {
+                        continue;
+                    }
 
                     JCTree.JCVariableDecl field = (JCTree.JCVariableDecl) def;
 
                     String fieldNameStr = field.getName().toString(); //String
 
                     String capitalized = fieldNameStr.substring(0, 1).toUpperCase()
-                                        + fieldNameStr.substring(1);
+                            + fieldNameStr.substring(1);
 
 
                     processingEnv.getMessager().printMessage(Diagnostic.Kind.NOTE, "Level 2 has been completed");
 
-                    /////////////// LEVEL3  Modifying AST nodes //////////////
+                    //// LEVEL3  Modifying AST nodes ////
 
-                    /////////////// GETTER //////////////
+                    //// GETTER ////
 
                     String annotationName = String.valueOf(annotation.getQualifiedName());
 
@@ -108,8 +105,6 @@ public class processor extends AbstractProcessor {
                         JCTree.JCBlock getterBody =
                                 treeMaker.Block(0, com.sun.tools.javac.util.List.of(returnStatement)); // 0 -> NoFlags // { return this.name; }
 
-
-// build method
                         JCTree.JCMethodDecl getterMethod =
                                 treeMaker.MethodDef(
                                         getterModifiers,
@@ -126,7 +121,7 @@ public class processor extends AbstractProcessor {
                         classDecl.defs = classDecl.defs.append(getterMethod);
                     }
 
-                    /////////////// SETTER //////////////
+                    //// SETTER ////
 
                     if (annotationName.equals("com.kho.annotations.Mutator")) {
 
@@ -137,7 +132,7 @@ public class processor extends AbstractProcessor {
                         JCTree.JCExpression voidType = treeMaker.TypeIdent(TypeTag.VOID);//void
 
                         JCTree.JCVariableDecl param =
-                                        treeMaker.VarDef(
+                                treeMaker.VarDef(
                                         treeMaker.Modifiers(Flags.PARAMETER),
                                         field.getName(),
                                         field.vartype,
@@ -149,7 +144,7 @@ public class processor extends AbstractProcessor {
 
                         JCTree.JCExpression fieldAccess = treeMaker.Select(thisExprs, field.getName());//this.name
 
-             // this.name = name;
+                        // this.name = name;
                         JCTree.JCAssign assign =
                                 treeMaker.Assign(
                                         fieldAccess,//this.name
@@ -158,7 +153,7 @@ public class processor extends AbstractProcessor {
 
                         JCTree.JCStatement statement = treeMaker.Exec(assign);
 
-             // method body { this.name = name; }
+                        // method body { this.name = name; }
                         JCTree.JCBlock setterBody =
                                 treeMaker.Block(
                                         0,
@@ -182,13 +177,12 @@ public class processor extends AbstractProcessor {
                         classDecl.defs = classDecl.defs.append(setterMethod);
                     }
 
-
                 }
             }
         }
 
         return true; //These annotations are no longer handled or used by any processor
-//return false??? Other processors can process these annotations
+                    //return false??? Other processors can process these annotations
     }
 
 }
