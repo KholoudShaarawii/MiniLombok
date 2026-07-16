@@ -1,128 +1,137 @@
-# Mini Lombok - Custom Annotation Processor
+# MiniLombok
 
-A lightweight custom annotation processor inspired by Lombok, built using Java Annotation Processing and Javac AST internals.
+MiniLombok is a Java project that demonstrates how annotation processors can generate getter and setter methods during compilation by modifying the Java compiler Abstract Syntax Tree (AST).
 
-## Overview
+The project provides two custom annotations:
 
-This project demonstrates how to build a custom annotation processor that generates accessor and mutator methods at compile time.
+- `@Accessor` — generates getter methods.
+- `@Mutator` — generates setter methods.
 
-Instead of writing getters and setters manually, the processor scans classes annotated with custom annotations and injects methods directly into the Abstract Syntax Tree (AST) during compilation.
+## How It Works
 
-The project is mainly educational and focuses on understanding:
+During Maven compilation, the custom annotation processor:
 
-- Java Annotation Processing API
-- Javac internal compiler APIs
-- AST inspection and modification
-- Compile-time code generation
+1. Detects classes annotated with `@Accessor` or `@Mutator`.
+2. Reads the annotated class and its fields using the Java Annotation Processing API.
+3. Accesses the `javac` compiler AST.
+4. Creates getter or setter method nodes using `TreeMaker`.
+5. Adds the generated methods to the class AST before bytecode generation.
 
-## Supported Annotations
-
-The processor currently supports:
-
-- `@Accessor` → generates getter methods
-- `@Mutator` → generates setter methods
-
-
-- If the class uses `@Accessor`, a getter is generated:
-  ```java
-  public Type getFieldName() {
-      return this.fieldName;
-  }
-  ```
-
-- If the class uses `@Mutator`, a setter is generated:
-  ```java
-  public void setFieldName(Type fieldName) {
-      this.fieldName = fieldName;
-  }
-  ```
+The processor modifies the class during compilation and does not create additional `.java` source files.
 
 ## Example
-
-### Input
 
 ```java
 @Accessor
 @Mutator
 public class User {
-    private String name;
-    private int age;
+
+    String name;
 }
 ```
 
-### Generated Methods
+The following methods become available after compilation:
 
 ```java
-public String getName() {
-    return this.name;
-}
-
-public void setName(String name) {
-    this.name = name;
-}
-
+public String getName();
+public void setName(String name);
 ```
 
-## Technologies Used
+They can then be used normally:
 
-- Java
-- Annotation Processing API
-- Javac Compiler Internals
-- AST Manipulation
+```java
+User user = new User();
 
-## Key Javac Classes Used
+user.setName("Kholoud");
+System.out.println(user.getName());
+```
 
-This project uses several internal Javac classes, such as:
+## Project Structure
 
-- `JavacProcessingEnvironment`
-- `TreeMaker`
-- `JCTree`
-- `Names`
-- `Flags`
+```text
+MiniLombok
+├── LombokProcessor
+│   ├── src/main/java
+│   │   └── LombokProcessor.java
+│   ├── src/main/resources
+│   │   └── META-INF/services
+│   │       └── javax.annotation.processing.Processor
+│   └── pom.xml
+│
+├── app
+│   ├── src/main/java/com/kho
+│   │   ├── annotations
+│   │   │   ├── Accessor.java
+│   │   │   └── Mutator.java
+│   │   ├── Main.java
+│   │   └── User.java
+│   └── pom.xml
+│
+└── pom.xml
+```
 
-These classes make it possible to inspect and modify Java source structure before bytecode generation.
+### Modules
 
-## Project Goal
+- **LombokProcessor:** Implements and registers the custom annotation processor.
+- **app:** Contains the annotations and a simple example that uses the generated methods.
+- **Root project:** Builds both Maven modules in the required order.
 
-The main goal of this project is educational.
+## Technologies
 
-It helps in understanding the difference between:
+- Java 11
+- Maven
+- Java Annotation Processing API
+- Java Compiler Tree API
+- `javac` AST internals
+- Java Service Provider configuration
 
-- Runtime reflection
-- Compile-time code generation
+## Build
 
-It also explains how tools like Lombok work internally on a smaller scale.
+Build the project from the root directory:
 
-## Processing Flow
+```bash
+mvn clean install
+```
 
-1. Compiler starts annotation processing
-2. The processor initializes compiler tools
-3. Annotated classes are discovered
-4. Class fields are inspected
-5. Getter/setter methods are generated
-6. Modified AST continues through normal compilation
+The root Maven project builds the annotation processor before compiling the application.
 
-## Requirements
+When using IntelliJ IDEA without Maven installed globally:
 
-- JDK 11 or compatible setup
-- Maven or any Java build tool that supports annotation processing
+```text
+Maven Tool Window
+→ lombok Root
+→ Lifecycle
+→ clean
+→ install
+```
 
+## Run
 
-## Learning Outcomes
+After a successful build, run:
 
-This project highlights hands-on experience with Java annotation processing, compiler internals, and AST-based code generation.
+```text
+app/src/main/java/com/kho/Main.java
+```
 
-It also demonstrates:
-- how annotation processors are discovered and executed
-- how Java compiler rounds work
-- how AST nodes represent classes, fields, and methods
-- how code can be generated before the program is compiled
+Or from the command line:
 
-  
-## Why This Project Matters
+```bash
+java -cp app/target/classes com.kho.Main
+```
 
-This project demonstrates a deeper level of Java understanding by focusing on compile-time code generation rather than standard application development.
+## Generated Methods
 
-It shows how Java source code can be inspected and modified inside the compiler using annotation processing and AST manipulation, which are core ideas behind advanced developer tools and libraries such as Lombok.
-As a result, the project reflects practical experience with compiler internals, code generation, and framework-level development concepts.
-mpiler internals and build a mini Lombok-style processor.
+After compilation, the generated getter and setter methods are included in the compiled `User.class` file under:
+
+```text
+app/target/classes
+```
+
+The `target` directories are Maven-generated build output and are intentionally excluded from version control.
+
+## Current Limitations
+
+- Supports basic getter and setter generation only.
+- Uses internal `javac` APIs and is configured for Java 11.
+- Generated methods are stored in compiled bytecode rather than separate Java source files.
+- The project is a focused demonstration of compile-time code generation, not a full replacement for Lombok.
